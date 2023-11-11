@@ -33,7 +33,7 @@ namespace TelegramBotTest
                 switch (command)
                 {
                     case "/start":
-                        await botClient.SendTextMessageAsync(message.Chat, "Это тестовая версия бота. Ошибки возможны.\n");
+                        await botClient.SendTextMessageAsync(message.Chat, "Это тестовая версия бота - v 0.0.2. Ошибки возможны.\n");
                         await Command(botClient, message);
                         break;
                     case "/getlist":
@@ -54,8 +54,8 @@ namespace TelegramBotTest
                     case "/command":
                         await Command(botClient, message);
                         break;
-                    case "/secret":
-                        await botClient.SendTextMessageAsync(message.Chat, "Ты у меня самая лучшая\n");
+                    case "скучаю":
+                        await botClient.SendTextMessageAsync(message.Chat, "Ты у меня самая лучшая <3\n");
                         break;
                     default:
                     {
@@ -75,7 +75,6 @@ namespace TelegramBotTest
                             "- \"название фильма\" - Удалить фильм, \n" +
                             "Check \"название фильма\" - Отметить фильм как просмотренный \n" +
                             "/Clear - Удалить все \n" +
-                            "Secret - <3 \n" +
                             "/Command - Получить список доступных команд \n");
             return;
         }
@@ -83,7 +82,7 @@ namespace TelegramBotTest
         private static async Task AddItem(ITelegramBotClient botClient, Message message, int probel)
         {
             Film newFilm = new Film();
-            newFilm.Name = message.Text.Substring(probel + 1);
+            newFilm.Name = message.Text.Substring(probel + 1).Trim();
             newFilm.Owner = message.From.FirstName;
             Films.Add(newFilm);
             return;
@@ -92,14 +91,14 @@ namespace TelegramBotTest
         private static async Task RemoveItem(ITelegramBotClient botClient, Message message, int probel)
         {
             Film newFilm = new Film();
-            newFilm.Name = message.Text.Substring(probel + 1);
+            newFilm.Name = message.Text.Substring(probel + 1).Trim();
             Films.Remove(newFilm);
             return;
         }
 
         private static async Task Cheack(ITelegramBotClient botClient, Message message, int probel)
         {
-            string name = message.Text.Substring(probel + 1);
+            string name = message.Text.Substring(probel + 1).Trim();
 
             foreach (var f in Films)
             {
