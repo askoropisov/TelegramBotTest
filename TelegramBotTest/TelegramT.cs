@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotTest.Services;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -18,9 +19,23 @@ namespace TelegramBotTest
         public readonly ITelegramBotClient bot = new TelegramBotClient("6746153930:AAFwNdo8EFHLpGYvS9u5PvoqGNV-Kyxa3NU");
         private readonly DBService _dBService;
 
+        ReplyKeyboardMarkup Keyboard = new ReplyKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                new KeyboardButton("Все фильмы"),
+                new KeyboardButton("Удалить все")
+            },
+            new[]
+            {
+                new KeyboardButton("Дополнительные команды"),
+                //new KeyboardButton("Удалить все")
+            }
+        });
+
         public TelegramT()
         {
-
+            
         }
 
         public  ObservableCollection<Film> Films { get; set; } = new ObservableCollection<Film>();
@@ -44,7 +59,7 @@ namespace TelegramBotTest
                         await botClient.SendTextMessageAsync(message.Chat, "Это тестовая версия бота - v 0.0.2. Ошибки возможны.\n");
                         await Command(botClient, message);
                         break;
-                    case "/getlist":
+                    case "все":
                         await GetListFilms(botClient, message);
                         break;
                     case "+":
@@ -56,10 +71,13 @@ namespace TelegramBotTest
                     case "check":
                         await Cheack(botClient, message, probel);
                         break;
-                    case "/clear":
+                    case "удалить":
                         await ClearAll(botClient, message);
                         break;
                     case "/command":
+                        await Command(botClient, message);
+                        break;
+                    case "дополнительные":
                         await Command(botClient, message);
                         break;
                     case "скучаю":
@@ -78,13 +96,11 @@ namespace TelegramBotTest
         {
             await botClient.SendTextMessageAsync(message.Chat,
                             "Список доступных команд: \n" +
-                            "/GetList - Получить список фильмов, \n" +
                             "+ \"название фильма\" - Добавить фильм, \n" +
                             "- \"название фильма\" - Удалить фильм, \n" +
                             "Check \"название фильма\" - Отметить фильм как просмотренный \n" +
-                            "/Clear - Удалить все \n" +
-                            "/Command - Получить список доступных команд \n");
-            return;
+                            "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
+            return; 
         }
 
         private async Task AddItem(ITelegramBotClient botClient, Message message, int probel)
@@ -95,7 +111,7 @@ namespace TelegramBotTest
             Films.Add(newFilm);
 
             DBService.Instance.Add(newFilm);
-
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" добавлен", newFilm.Name), replyMarkup: Keyboard);
             return;
         }
 
@@ -124,7 +140,7 @@ namespace TelegramBotTest
             string filmsList = string.Empty;
             var films = DBService.Instance.GetAll();
 
-            if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "Список фильмов пока пуст =(");
+            if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "Список фильмов пока пуст =(", replyMarkup: Keyboard);
             else
             {
                 foreach (var f in films)
@@ -134,7 +150,7 @@ namespace TelegramBotTest
 
                     filmsList += (f.Name + " " + (isChecked + " " + f.Owner) + "\n");
                 }
-                await botClient.SendTextMessageAsync(message.Chat, filmsList);
+                await botClient.SendTextMessageAsync(message.Chat, filmsList, replyMarkup: Keyboard);
             }
             return;
         }
@@ -142,7 +158,10 @@ namespace TelegramBotTest
         private async Task ClearAll(ITelegramBotClient botClient, Message message)
         {
             Films.Clear();
-            await botClient.SendTextMessageAsync(message.Chat, "Список фильмов очищен, скорее добавь новые!");
+            await botClient.SendTextMessageAsync(message.Chat, "Список фильмов очищен, скорее добавь новые!", replyMarkup: Keyboard);
+
+            DBService.Instance.Clear();
+
             return;
         }
 

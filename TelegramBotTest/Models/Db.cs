@@ -36,7 +36,6 @@ namespace TelegramBotTest.Models
 
         public void Add(Film film)
         {
-
             using (var transact = _connection.BeginTransaction())
             {
                 var query = new SqliteCommand("insert into films " +
@@ -47,12 +46,16 @@ namespace TelegramBotTest.Models
                 query.Parameters.Add(new SqliteParameter("@discription", film.Discription)) ;
                 query.Parameters.Add(new SqliteParameter("@link", film.URL));
                 query.Parameters.Add(new SqliteParameter("@owner", film.Owner));
-                query.Parameters.Add(new SqliteParameter("@status", 1));
-
+                query.Parameters.Add(new SqliteParameter("@status", film.IsChecked));
 
                 query.ExecuteNonQuery();
                 transact.Commit();
             }
+        }
+
+        public void CheckFilm(string filmName)
+        {
+
         }
 
         public List<Film> GetAll()
@@ -68,9 +71,10 @@ namespace TelegramBotTest.Models
 
                 film.Name = (string)(record["filmName"] ?? "");
                 film.Discription = (string)(record["discription"] ?? "");
-                film.Owner = (string)(record["owner"] ?? "");
                 film.URL = (string)(record["link"] ?? "");
-                //var t = (string)(record["status"] ?? "");
+                film.Owner = (string)(record["owner"] ?? "");
+                var t   = record["status"];
+                film.IsChecked = Convert.ToBoolean(t);
 
                 list.Add(film);
             }
@@ -80,19 +84,15 @@ namespace TelegramBotTest.Models
 
         public void Clear()
         {
-            var command = new SqliteCommand("delete form results", _connection);
+            var command = new SqliteCommand("delete from films", _connection);
             command.ExecuteNonQuery();
         }
 
         private void CreateDatabase()
         {
-            //SqliteConnection.CreateFile(Paths.Database);
-
             var connection = new SqliteConnection(GetConnectionString());
             
             connection.Open();
-
-            var comand = connection.CreateCommand();
 
             var command = new SqliteCommand("CREATE TABLE films " +
                                             "(" +
@@ -106,12 +106,6 @@ namespace TelegramBotTest.Models
             command.ExecuteNonQuery();
 
             connection.Close();
-        }
-
-        private static double ToEpoch(DateTime time)
-        {
-            var epoch = new DateTime(1970, 1, 1);
-            return time.Subtract(epoch).TotalMilliseconds;
         }
 
         private static DateTime FromEpoch(double timestamp)
