@@ -49,7 +49,7 @@ namespace TelegramBotTest
                 switch (command)
                 {
                     case "/start":
-                        await botClient.SendTextMessageAsync(message.Chat, "Это тестовая версия бота - v 0.0.2. Ошибки возможны.\n");
+                        await botClient.SendTextMessageAsync(message.Chat, "Это тестовая версия бота - v 0.0.3. Ошибки возможны.\n");
                         await Command(botClient, message);
                         break;
                     case "все":
@@ -61,10 +61,10 @@ namespace TelegramBotTest
                     case "-":
                         await RemoveItem(botClient, message, probel);
                         break;
-                    case "check":
+                    case ">":
                         await Cheack(botClient, message, probel);
                         break;
-                    case "uncheck":
+                    case "<":
                         await UnCheack(botClient, message, probel);
                         break;
                     case "удалить":
@@ -94,8 +94,8 @@ namespace TelegramBotTest
                             "Список доступных команд: \n" +
                             "+ \"название фильма\" - Добавить фильм, \n" +
                             "- \"название фильма\" - Удалить фильм, \n" +
-                            "Check \"название фильма\" - Отметить фильм как просмотренный \n" +
-                            "Check \"название фильма\" - Отметить фильм как непросмотренный \n" +
+                            "> \"название фильма\" - Отметить фильм как просмотренный \n" +
+                            "< \"название фильма\" - Отметить фильм как непросмотренный \n" +
                             "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
             return;
         }
@@ -153,7 +153,7 @@ namespace TelegramBotTest
                 foreach (var f in films)
                 {
                     string isChecked = string.Empty;
-                    if (f.IsChecked) isChecked = "✓"; else isChecked = "✕";
+                    if (f.IsChecked) isChecked = "✅"; else isChecked = "❌";
 
                     filmsList += (f.Name + " " + (isChecked + " " + f.Owner) + "\n");
                 }
