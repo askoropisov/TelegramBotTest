@@ -71,6 +71,9 @@ namespace TelegramBotTest
                     case "check":
                         await Cheack(botClient, message, probel);
                         break;
+                    case "uncheck":
+                        await UnCheack(botClient, message, probel);
+                        break;
                     case "удалить":
                         await ClearAll(botClient, message);
                         break;
@@ -99,6 +102,7 @@ namespace TelegramBotTest
                             "+ \"название фильма\" - Добавить фильм, \n" +
                             "- \"название фильма\" - Удалить фильм, \n" +
                             "Check \"название фильма\" - Отметить фильм как просмотренный \n" +
+                            "Check \"название фильма\" - Отметить фильм как непросмотренный \n" +
                             "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
             return; 
         }
@@ -127,10 +131,17 @@ namespace TelegramBotTest
         {
             string name = message.Text.Substring(probel + 1).Trim();
 
-            foreach (var f in Films)
-            {
-                if (f.Name == name) f.IsChecked = true;
-            }
+            DBService.Instance.CheckFilm(name);
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" отмечен как просмотренный", name), replyMarkup: Keyboard);
+            return;
+        }
+
+        private async Task UnCheack(ITelegramBotClient botClient, Message message, int probel)
+        {
+            string name = message.Text.Substring(probel + 1).Trim();
+
+            DBService.Instance.UnCheckFilm(name);
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" отмечен как непросмотренный", name), replyMarkup: Keyboard);
             return;
         }
 
@@ -139,7 +150,7 @@ namespace TelegramBotTest
 
             string filmsList = string.Empty;
             var films = DBService.Instance.GetAll();
-
+             
             if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "Список фильмов пока пуст =(", replyMarkup: Keyboard);
             else
             {

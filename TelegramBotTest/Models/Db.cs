@@ -10,6 +10,8 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using Telegram.Bot.Types;
+using DryIoc.ImTools;
 
 namespace TelegramBotTest.Models
 {
@@ -19,7 +21,7 @@ namespace TelegramBotTest.Models
 
         public void Open()
         {
-            if (!File.Exists(Paths.Database))
+            if (!System.IO.File.Exists(Paths.Database))
                 CreateDatabase();
 
             _connection = new SqliteConnection(GetConnectionString());
@@ -53,9 +55,30 @@ namespace TelegramBotTest.Models
             }
         }
 
-        public void CheckFilm(string filmName)
+        public void CheckFilm(string film)
         {
 
+            var command = new SqliteCommand("update films " +
+                                            "set status = @status " +
+                                            "where filmName = @filmName", _connection);
+
+            command.Parameters.Add(new SqliteParameter("@status", true));
+            command.Parameters.Add(new SqliteParameter("@filmName", film));
+
+            var reader = command.ExecuteReader();
+        }
+
+        public void UnCheckFilm(string film)
+        {
+
+            var command = new SqliteCommand("update films " +
+                                            "set status = @status " +
+                                            "where filmName = @filmName", _connection);
+
+            command.Parameters.Add(new SqliteParameter("@status", false));
+            command.Parameters.Add(new SqliteParameter("@filmName", film));
+
+            var reader = command.ExecuteReader();
         }
 
         public List<Film> GetAll()
@@ -73,8 +96,7 @@ namespace TelegramBotTest.Models
                 film.Discription = (string)(record["discription"] ?? "");
                 film.URL = (string)(record["link"] ?? "");
                 film.Owner = (string)(record["owner"] ?? "");
-                var t   = record["status"];
-                film.IsChecked = Convert.ToBoolean(t);
+                film.IsChecked = Convert.ToBoolean(record["status"]);
 
                 list.Add(film);
             }
