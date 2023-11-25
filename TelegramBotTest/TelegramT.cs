@@ -1,23 +1,17 @@
-﻿using Microsoft.Data.Sqlite;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotTest.Services;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TelegramBotTest
 {
     public class TelegramT
     {
         public readonly ITelegramBotClient bot = new TelegramBotClient("6746153930:AAFwNdo8EFHLpGYvS9u5PvoqGNV-Kyxa3NU");
-        private readonly DBService _dBService;
 
         ReplyKeyboardMarkup Keyboard = new ReplyKeyboardMarkup(new[]
         {
@@ -35,13 +29,12 @@ namespace TelegramBotTest
 
         public TelegramT()
         {
-            
+
         }
 
-        public  ObservableCollection<Film> Films { get; set; } = new ObservableCollection<Film>();
+        public ObservableCollection<Film> Films { get; set; } = new ObservableCollection<Film>();
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            // Некоторые действия
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
             if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
             {
@@ -95,7 +88,7 @@ namespace TelegramBotTest
             }
         }
 
-        private  async Task Command(ITelegramBotClient botClient, Message message)
+        private async Task Command(ITelegramBotClient botClient, Message message)
         {
             await botClient.SendTextMessageAsync(message.Chat,
                             "Список доступных команд: \n" +
@@ -104,7 +97,7 @@ namespace TelegramBotTest
                             "Check \"название фильма\" - Отметить фильм как просмотренный \n" +
                             "Check \"название фильма\" - Отметить фильм как непросмотренный \n" +
                             "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
-            return; 
+            return;
         }
 
         private async Task AddItem(ITelegramBotClient botClient, Message message, int probel)
@@ -115,15 +108,18 @@ namespace TelegramBotTest
             Films.Add(newFilm);
 
             DBService.Instance.Add(newFilm);
-            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" добавлен", newFilm.Name), replyMarkup: Keyboard);
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" добавлен в список", newFilm.Name), replyMarkup: Keyboard);
             return;
         }
 
-        private  async Task RemoveItem(ITelegramBotClient botClient, Message message, int probel)
+        private async Task RemoveItem(ITelegramBotClient botClient, Message message, int probel)
         {
             Film newFilm = new Film();
             newFilm.Name = message.Text.Substring(probel + 1).Trim();
             Films.Remove(newFilm);
+
+            DBService.Instance.Remove(message.Text.Substring(probel + 1).Trim());
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" удален из списка", newFilm.Name), replyMarkup: Keyboard);
             return;
         }
 
@@ -150,7 +146,7 @@ namespace TelegramBotTest
 
             string filmsList = string.Empty;
             var films = DBService.Instance.GetAll();
-             
+
             if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "Список фильмов пока пуст =(", replyMarkup: Keyboard);
             else
             {
@@ -178,7 +174,6 @@ namespace TelegramBotTest
 
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
-            // Некоторые действия
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
         }
     }

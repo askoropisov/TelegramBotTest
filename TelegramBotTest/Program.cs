@@ -1,16 +1,9 @@
 ﻿
 using DryIoc;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.ObjectModel;
-using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotTest.Services;
 
 namespace TelegramBotTest
@@ -38,7 +31,7 @@ namespace TelegramBotTest
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
             {
-                AllowedUpdates = { }, // receive all update types
+                AllowedUpdates = { },
             };
 
             t.bot.StartReceiving(

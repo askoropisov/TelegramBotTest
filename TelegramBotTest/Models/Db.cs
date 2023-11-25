@@ -1,17 +1,8 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Data;
-using System.IO;
-using System.Linq;
-using System.Net.Http.Json;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using Telegram.Bot.Types;
-using DryIoc.ImTools;
+using System.Data.Common;
 
 namespace TelegramBotTest.Models
 {
@@ -45,7 +36,7 @@ namespace TelegramBotTest.Models
                                               "values (@filmName, @discription, @link, @owner, @status)", _connection, transact);
 
                 query.Parameters.Add(new SqliteParameter("@filmName", film.Name));
-                query.Parameters.Add(new SqliteParameter("@discription", film.Discription)) ;
+                query.Parameters.Add(new SqliteParameter("@discription", film.Discription));
                 query.Parameters.Add(new SqliteParameter("@link", film.URL));
                 query.Parameters.Add(new SqliteParameter("@owner", film.Owner));
                 query.Parameters.Add(new SqliteParameter("@status", film.IsChecked));
@@ -53,6 +44,15 @@ namespace TelegramBotTest.Models
                 query.ExecuteNonQuery();
                 transact.Commit();
             }
+        }
+
+        public void Remove(string film) 
+        {
+            var command = new SqliteCommand("delete from films " +
+                                            "where filmName = @filmName", _connection);
+
+            command.Parameters.Add(new SqliteParameter("@filmName", film));
+            var reader = command.ExecuteReader();
         }
 
         public void CheckFilm(string film)
@@ -113,7 +113,7 @@ namespace TelegramBotTest.Models
         private void CreateDatabase()
         {
             var connection = new SqliteConnection(GetConnectionString());
-            
+
             connection.Open();
 
             var command = new SqliteCommand("CREATE TABLE films " +
