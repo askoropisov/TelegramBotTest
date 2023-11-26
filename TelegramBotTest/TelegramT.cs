@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotTest.Services;
+using static System.Net.WebRequestMethods;
 
 namespace TelegramBotTest
 {
@@ -70,6 +73,12 @@ namespace TelegramBotTest
                     case "<":
                         await UnCheack(botClient, message, probel);
                         break;
+                    case "описание":
+                        await GetDiscription(botClient, message, probel);
+                        break;
+                    case "трейлер":
+                        await GetTrailer(botClient, message, probel);
+                        break;
                     case "удалить":
                         await ClearAll(botClient, message);
                         break;
@@ -99,6 +108,8 @@ namespace TelegramBotTest
                             "- \"название фильма\" - Удалить фильм, \n" +
                             "> \"название фильма\" - Отметить фильм как просмотренный \n" +
                             "< \"название фильма\" - Отметить фильм как непросмотренный \n" +
+                            "Описание \"название фильма\" - Показать описание фильма \n" +
+                            "Трейлер \"название фильма\" - Найти трейлер фильма \n" +
                             "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
             return;
         }
@@ -117,6 +128,7 @@ namespace TelegramBotTest
 
         private async Task RemoveItem(ITelegramBotClient botClient, Message message, int probel)
         {
+            //Добавить проверку на наличие фильма в БД
             Film newFilm = new Film();
             newFilm.Name = message.Text.Substring(probel + 1).Trim();
             Films.Remove(newFilm);
@@ -192,6 +204,24 @@ namespace TelegramBotTest
 
             return;
         }
+
+        private async Task GetDiscription(ITelegramBotClient botClient, Message message, int probel)
+        {
+            string name = message.Text.Substring(probel + 1, message.Text.Length - (probel + 1)).Trim();
+            string link = "https://ya.ru/search/?text=" + "описание фильма " + name;
+            link = link.Replace(" ", "+");
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Вот описание фильма \"{0}\" \n {1} ", name, link), replyMarkup: Keyboard);
+        }
+
+        private async Task GetTrailer(ITelegramBotClient botClient, Message message, int probel)
+        {
+            string name = message.Text.Substring(probel + 1, message.Text.Length - (probel + 1)).Trim();
+            string link = "https://www.youtube.com/results?search_query=" + name + " трейлер";
+            link = link.Replace(" ", "+");
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Вот трейлер фильма \"{0}\" \n {1} ", name, link), replyMarkup: Keyboard);
+        }
+
+
 
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
