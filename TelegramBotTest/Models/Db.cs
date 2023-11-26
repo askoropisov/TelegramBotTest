@@ -1,8 +1,10 @@
 ﻿using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Threading.Tasks;
 
 namespace TelegramBotTest.Models
 {
@@ -44,6 +46,38 @@ namespace TelegramBotTest.Models
                 query.ExecuteNonQuery();
                 transact.Commit();
             }
+        }
+
+
+        // Это неправильная реализация! Проверку нужно делать на стороне БД. Переделать
+        public List<string> GetNotChecked()
+        {
+            var anyFilms = new List<Film>();
+            var command = new SqliteCommand("select * from films;", _connection);
+
+            var reader = command.ExecuteReader();
+            foreach (DbDataRecord record in reader)
+            {
+                var film = new Film();
+
+                film.Name = (string)(record["filmName"] ?? "");
+                film.Discription = (string)(record["discription"] ?? "");
+                film.URL = (string)(record["link"] ?? "");
+                film.Owner = (string)(record["owner"] ?? "");
+                film.IsChecked = Convert.ToBoolean(record["status"]);
+
+                anyFilms.Add(film);
+            }
+
+            List<string> filmNames = new List<string>();
+            foreach (var item in anyFilms)
+            {
+                if (!item.IsChecked)
+                {
+                    filmNames.Add(item.Name);
+                }
+            }
+            return filmNames;
         }
 
         public void Remove(string film) 

@@ -22,8 +22,8 @@ namespace TelegramBotTest
             },
             new[]
             {
-                new KeyboardButton("Дополнительные команды"),
-                //new KeyboardButton("Удалить все")
+                new KeyboardButton("Непросмотренные"),
+                new KeyboardButton("Дополнительные команды")
             }
         });
 
@@ -54,6 +54,9 @@ namespace TelegramBotTest
                         break;
                     case "все":
                         await GetListFilms(botClient, message);
+                        break;
+                    case "непросмотренные":
+                        await GetUnChecked(botClient, message);
                         break;
                     case "+":
                         await AddItem(botClient, message, probel);
@@ -156,6 +159,24 @@ namespace TelegramBotTest
                     if (f.IsChecked) isChecked = "✅"; else isChecked = "❌";
 
                     filmsList += (f.Name + " " + (isChecked + " " + f.Owner) + "\n");
+                }
+                await botClient.SendTextMessageAsync(message.Chat, filmsList, replyMarkup: Keyboard);
+            }
+            return;
+        }
+
+        private async Task GetUnChecked(ITelegramBotClient botClient, Message message)
+        {
+
+            string filmsList = string.Empty;
+            var films = DBService.Instance.GetNotChecked();
+
+            if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "У вас нет непросмотренных фильмов", replyMarkup: Keyboard);
+            else
+            {
+                foreach (var f in films)
+                {
+                    filmsList += (f + "\n");
                 }
                 await botClient.SendTextMessageAsync(message.Chat, filmsList, replyMarkup: Keyboard);
             }
