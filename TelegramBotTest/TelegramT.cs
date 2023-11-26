@@ -21,7 +21,7 @@ namespace TelegramBotTest
             new[]
             {
                 new KeyboardButton("Все фильмы"),
-                new KeyboardButton("Удалить все")
+                new KeyboardButton("Рекомендуемые")
             },
             new[]
             {
@@ -38,15 +38,25 @@ namespace TelegramBotTest
         public ObservableCollection<Film> Films { get; set; } = new ObservableCollection<Film>();
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+            Console.WriteLine(JsonConvert.SerializeObject(update));
             if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
             {
+                string command = string.Empty;
                 var message = update.Message;
-                string command = message.Text.ToLower();
-                int probel = command.IndexOf(" ");
-                if (probel > 0)
+                int probel = 0;
+
+                try
                 {
-                    command = command.Substring(0, probel);
+                    command = message.Text.ToLower();
+                    probel = command.IndexOf(" ");
+                    if (probel > 0)
+                    {
+                        command = command.Substring(0, probel);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await botClient.SendTextMessageAsync(message.Chat, "Неизвестная команда");
                 }
 
                 switch (command)
@@ -70,6 +80,9 @@ namespace TelegramBotTest
                     case ">":
                         await Cheack(botClient, message, probel);
                         break;
+                    case "!":
+                        await Like(botClient, message, probel);
+                        break;
                     case "<":
                         await UnCheack(botClient, message, probel);
                         break;
@@ -79,7 +92,7 @@ namespace TelegramBotTest
                     case "трейлер":
                         await GetTrailer(botClient, message, probel);
                         break;
-                    case "удалить":
+                    case "remove":
                         await ClearAll(botClient, message);
                         break;
                     case "/command":
@@ -88,8 +101,14 @@ namespace TelegramBotTest
                     case "дополнительные":
                         await Command(botClient, message);
                         break;
+                    case "рекомендуемые":
+                        await GetRecomended(botClient, message);
+                        break;
                     case "скучаю":
                         await botClient.SendTextMessageAsync(message.Chat, "Ты у меня самая лучшая <3\n");
+                        break;
+                    case "егор":
+                        await botClient.SendTextMessageAsync(message.Chat, "Где журнал!?\n");
                         break;
                     default:
                         {
@@ -108,6 +127,7 @@ namespace TelegramBotTest
                             "- \"название фильма\" - Удалить фильм, \n" +
                             "> \"название фильма\" - Отметить фильм как просмотренный \n" +
                             "< \"название фильма\" - Отметить фильм как непросмотренный \n" +
+                            "! \"название фильма\" - Отметить фильм как рекомендуемый \n" +
                             "Описание \"название фильма\" - Показать описание фильма \n" +
                             "Трейлер \"название фильма\" - Найти трейлер фильма \n" +
                             "/Command - Получить список доступных команд \n", replyMarkup: Keyboard);
@@ -147,6 +167,15 @@ namespace TelegramBotTest
             return;
         }
 
+        private async Task Like(ITelegramBotClient botClient, Message message, int probel)
+        {
+            string name = message.Text.Substring(probel + 1).Trim();
+
+            DBService.Instance.LikeFilm(name);
+            await botClient.SendTextMessageAsync(message.Chat, string.Format("Фильм \"{0}\" отмечен как рекомендуемый", name), replyMarkup: Keyboard);
+            return;
+        }
+
         private async Task UnCheack(ITelegramBotClient botClient, Message message, int probel)
         {
             string name = message.Text.Substring(probel + 1).Trim();
@@ -168,9 +197,11 @@ namespace TelegramBotTest
                 foreach (var f in films)
                 {
                     string isChecked = string.Empty;
+                    string isRecomended = string.Empty;
                     if (f.IsChecked) isChecked = "✅"; else isChecked = "❌";
+                    if (f.IsRecomended) isRecomended = "❤️";;
 
-                    filmsList += (f.Name + " " + (isChecked + " " + f.Owner) + "\n");
+                    filmsList += ( isRecomended + f.Name + " " + (isChecked + " " + f.Owner) + "\n");
                 }
                 await botClient.SendTextMessageAsync(message.Chat, filmsList, replyMarkup: Keyboard);
             }
@@ -184,6 +215,24 @@ namespace TelegramBotTest
             var films = DBService.Instance.GetNotChecked();
 
             if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "У вас нет непросмотренных фильмов", replyMarkup: Keyboard);
+            else
+            {
+                foreach (var f in films)
+                {
+                    filmsList += (f + "\n");
+                }
+                await botClient.SendTextMessageAsync(message.Chat, filmsList, replyMarkup: Keyboard);
+            }
+            return;
+        }
+
+        private async Task GetRecomended(ITelegramBotClient botClient, Message message)
+        {
+
+            string filmsList = string.Empty;
+            var films = DBService.Instance.GetRecomended();
+
+            if (films.Count < 1) await botClient.SendTextMessageAsync(message.Chat, "У вас нет рекомендуемых фильмов", replyMarkup: Keyboard);
             else
             {
                 foreach (var f in films)

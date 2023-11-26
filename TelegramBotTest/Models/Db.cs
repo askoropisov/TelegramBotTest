@@ -34,14 +34,15 @@ namespace TelegramBotTest.Models
             using (var transact = _connection.BeginTransaction())
             {
                 var query = new SqliteCommand("insert into films " +
-                                              "(filmName, discription, link, owner, status) " +
-                                              "values (@filmName, @discription, @link, @owner, @status)", _connection, transact);
+                                              "(filmName, discription, link, owner, status, recomended) " +
+                                              "values (@filmName, @discription, @link, @owner, @status, @recomended)", _connection, transact);
 
                 query.Parameters.Add(new SqliteParameter("@filmName", film.Name));
                 query.Parameters.Add(new SqliteParameter("@discription", film.Discription));
                 query.Parameters.Add(new SqliteParameter("@link", film.URL));
                 query.Parameters.Add(new SqliteParameter("@owner", film.Owner));
                 query.Parameters.Add(new SqliteParameter("@status", film.IsChecked));
+                query.Parameters.Add(new SqliteParameter("@recomended", film.IsRecomended));
 
                 query.ExecuteNonQuery();
                 transact.Commit();
@@ -65,6 +66,7 @@ namespace TelegramBotTest.Models
                 film.URL = (string)(record["link"] ?? "");
                 film.Owner = (string)(record["owner"] ?? "");
                 film.IsChecked = Convert.ToBoolean(record["status"]);
+                film.IsRecomended = Convert.ToBoolean(record["recomended"]);
 
                 anyFilms.Add(film);
             }
@@ -73,6 +75,38 @@ namespace TelegramBotTest.Models
             foreach (var item in anyFilms)
             {
                 if (!item.IsChecked)
+                {
+                    filmNames.Add(item.Name);
+                }
+            }
+            return filmNames;
+        }
+
+        // Это неправильная реализация! Проверку нужно делать на стороне БД. Переделать
+        public List<string> GetRecomended()
+        {
+            var anyFilms = new List<Film>();
+            var command = new SqliteCommand("select * from films;", _connection);
+
+            var reader = command.ExecuteReader();
+            foreach (DbDataRecord record in reader)
+            {
+                var film = new Film();
+
+                film.Name = (string)(record["filmName"] ?? "");
+                film.Discription = (string)(record["discription"] ?? "");
+                film.URL = (string)(record["link"] ?? "");
+                film.Owner = (string)(record["owner"] ?? "");
+                film.IsChecked = Convert.ToBoolean(record["status"]);
+                film.IsRecomended = Convert.ToBoolean(record["recomended"]);
+
+                anyFilms.Add(film);
+            }
+
+            List<string> filmNames = new List<string>();
+            foreach (var item in anyFilms)
+            {
+                if (!item.IsRecomended)
                 {
                     filmNames.Add(item.Name);
                 }
@@ -97,6 +131,19 @@ namespace TelegramBotTest.Models
                                             "where filmName = @filmName", _connection);
 
             command.Parameters.Add(new SqliteParameter("@status", true));
+            command.Parameters.Add(new SqliteParameter("@filmName", film));
+
+            var reader = command.ExecuteReader();
+        }
+
+        public void LikeFilm(string film)
+        {
+
+            var command = new SqliteCommand("update films " +
+                                            "set recomended = @recomended " +
+                                            "where filmName = @filmName", _connection);
+
+            command.Parameters.Add(new SqliteParameter("@recomended", true));
             command.Parameters.Add(new SqliteParameter("@filmName", film));
 
             var reader = command.ExecuteReader();
@@ -131,6 +178,7 @@ namespace TelegramBotTest.Models
                 film.URL = (string)(record["link"] ?? "");
                 film.Owner = (string)(record["owner"] ?? "");
                 film.IsChecked = Convert.ToBoolean(record["status"]);
+                film.IsRecomended = Convert.ToBoolean(record["recomended"]);
 
                 list.Add(film);
             }
@@ -157,7 +205,8 @@ namespace TelegramBotTest.Models
                                             "discription TEXT," +
                                             "link TEXT," +
                                             "owner TEXT," +
-                                            "status INTEGER" +
+                                            "status INTEGER," +
+                                            "recomended INTEGER" +
                                             ")", connection);
             command.ExecuteNonQuery();
 
